@@ -1,0 +1,5 @@
+# Mantem as estatisticas de linguagem do GitHub focadas em Python.
+*.py linguist-language=Python
+*.html linguist-vendored
+*.css linguist-vendored
+*.js linguist-vendored
