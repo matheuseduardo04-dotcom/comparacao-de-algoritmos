@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sort Algorithm Comparison</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background-color: #0f1419;
+            color: #fff;
+            padding: 32px;
+            font-family: 'Space Mono', monospace;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 32px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #00d9ff, #ff006e);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-weight: bold;
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 32px;
+            font-size: 14px;
+        }
+
+        .controls {
+            background-color: #16213e;
+            padding: 24px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            border: 1px solid #0f3460;
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .control-label {
+            color: #888;
+            font-size: 12px;
+            display: block;
+        }
+
+        input[type="range"] {
+            width: 200px;
+            accent-color: #00d9ff;
+            cursor: pointer;
+        }
+
+        input[type="range"]:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
+        }
+
+        button {
+            padding: 12px 24px;
+            background-color: #00d9ff;
+            color: #000;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            font-family: 'Space Mono', monospace;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #00b8cc;
+            transform: scale(1.05);
+        }
+
+        button:disabled {
+            background-color: #333;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .comparison-container {
+            display: flex;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .sort-visualizer {
+            flex: 1;
+        }
+
+        .visualizer-title {
+            color: #00d9ff;
+            margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .bars-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            gap: 4px;
+            height: 200px;
+            padding: 16px;
+            background-color: #1a1a2e;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            border: 1px solid #0f3460;
+        }
+
+        .bar {
+            flex: 1;
+            background-color: #00d9ff;
+            transition: all 0.1s ease;
+            border-radius: 2px;
+            position: relative;
+        }
+
+        .bar.comparing {
+            background-color: #ff006e;
+        }
+
+        .bar.swapping {
+            background-color: #ffb700;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            font-size: 14px;
+        }
+
+        .stat-box {
+            background-color: #16213e;
+            padding: 12px;
+            border-radius: 6px;
+            border: 1px solid #0f3460;
+        }
+
+        .stat-label {
+            color: #888;
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        .stat-value {
+            color: #00d9ff;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .stat-value.swaps {
+            color: #ffb700;
+        }
+
+        .stat-value.done-true {
+            color: #00ff88;
+        }
+
+        .stat-value.done-false {
+            color: #ff006e;
+        }
+
+        .legend {
+            margin-top: 32px;
+            padding: 20px;
+            background-color: #16213e;
+            border-radius: 12px;
+            border: 1px solid #0f3460;
+            font-size: 13px;
+            color: #aaa;
+        }
+
+        .legend-title {
+            color: #00d9ff;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .legend-item {
+            margin: 8px 0;
+        }
+
+        .legend-color {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 2px;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+
+        @media (max-width: 768px) {
+            .comparison-container {
+                flex-direction: column;
+            }
+
+            .controls {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            input[type="range"] {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>COMPARAÇÃO DE ALGORITMOS DE ORDENAÇÃO</h1>
+        <p class="subtitle">Comparar Insertion Sort vs Bubble Sort em tempo real</p>
+
+        <div class="controls">
+            <div class="control-group">
+                <label class="control-label">Tamanho do Array: <span id="sizeDisplay">20</span></label>
+                <input type="range" id="arraySize" min="5" max="50" value="20">
+            </div>
+            <button id="startBtn" onclick="handleStart()">▶ Start Sorting</button>
+        </div>
+
+        <div class="comparison-container">
+            <!-- Insertion Sort -->
+            <div class="sort-visualizer">
+                <div class="visualizer-title">Insertion Sort</div>
+                <div class="bars-container" id="insertionBars"></div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Tempo</div>
+                        <div class="stat-value" id="insertionTime">0ms</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Comparações</div>
+                        <div class="stat-value" id="insertionComps">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Trocas</div>
+                        <div class="stat-value swaps" id="insertionSwaps">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value done-false" id="insertionStatus">Aguardando...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bubble Sort -->
+            <div class="sort-visualizer">
+                <div class="visualizer-title">Bubble Sort</div>
+                <div class="bars-container" id="bubbleBars"></div>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-label">Tempo</div>
+                        <div class="stat-value" id="bubbleTime">0ms</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Comparações</div>
+                        <div class="stat-value" id="bubbleComps">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Trocas</div>
+                        <div class="stat-value swaps" id="bubbleSwaps">0</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-label">Status</div>
+                        <div class="stat-value done-false" id="bubbleStatus">Aguardando...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-title">Legenda:</div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #00d9ff;"></span>
+                <span style="color: #00d9ff;">Cyan</span> = Elemento padrão
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #ff006e;"></span>
+                <span style="color: #ff006e;">Pink</span> = Sendo comparado
+            </div>
+            <div class="legend-item">
+                <span class="legend-color" style="background-color: #ffb700;"></span>
+                <span style="color: #ffb700;">Amber</span> = Sendo trocado
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let isRunning = false;
+        let originalArray = [];
+
+        // Gerar array aleatório
+        function generateArray() {
+            const size = parseInt(document.getElementById('arraySize').value);
+            originalArray = Array.from({ length: size }, () => Math.floor(Math.random() * 100) + 1);
+            renderInitialBars();
+            resetStats();
+        }
+
+        // Render inicial das barras
+        function renderInitialBars() {
+            const size = originalArray.length;
+            let insertionHTML = '';
+            let bubbleHTML = '';
+
+            originalArray.forEach(val => {
+                const height = (val / 100) * 100;
+                insertionHTML += `<div class="bar" style="height: ${height}%;"></div>`;
+                bubbleHTML += `<div class="bar" style="height: ${height}%;"></div>`;
+            });
+
+            document.getElementById('insertionBars').innerHTML = insertionHTML;
+            document.getElementById('bubbleBars').innerHTML = bubbleHTML;
+        }
+
+        // Reset de estatísticas
+        function resetStats() {
+            document.getElementById('insertionTime').textContent = '0ms';
+            document.getElementById('insertionComps').textContent = '0';
+            document.getElementById('insertionSwaps').textContent = '0';
+            document.getElementById('insertionStatus').textContent = 'Aguardando...';
+            document.getElementById('insertionStatus').className = 'stat-value done-false';
+
+            document.getElementById('bubbleTime').textContent = '0ms';
+            document.getElementById('bubbleComps').textContent = '0';
+            document.getElementById('bubbleSwaps').textContent = '0';
+            document.getElementById('bubbleStatus').textContent = 'Aguardando...';
+            document.getElementById('bubbleStatus').className = 'stat-value done-false';
+        }
+
+        // Insertion Sort
+        async function insertionSort() {
+            const arr = [...originalArray];
+            let comps = 0, swaps = 0;
+            const startTime = performance.now();
+            const bars = document.querySelectorAll('#insertionBars .bar');
+
+            for (let i = 1; i < arr.length; i++) {
+                let j = i - 1;
+                const key = arr[i];
+
+                while (j >= 0 && arr[j] > key) {
+                    comps++;
+                    // Comparação
+                    bars[j].classList.add('comparing');
+                    document.getElementById('insertionComps').textContent = comps;
+                    document.getElementById('insertionTime').textContent = 
+                        Math.round((performance.now() - startTime) * 100) / 100 + 'ms';
+                    await sleep(50);
+
+                    // Shift
+                    arr[j + 1] = arr[j];
+                    swaps++;
+                    bars[j].classList.remove('comparing');
+                    bars[j + 1].classList.add('swapping');
+                    bars[j + 1].style.height = (arr[j + 1] / 100) * 100 + '%';
+                    document.getElementById('insertionSwaps').textContent = swaps;
+                    document.getElementById('insertionTime').textContent = 
+                        Math.round((performance.now() - startTime) * 100) / 100 + 'ms';
+                    await sleep(50);
+
+                    bars[j + 1].classList.remove('swapping');
+                    j--;
+                }
+
+                // Inserir chave (só se entrou no while)
+                if (j < i - 1) {
+                    arr[j + 1] = key;
+                    swaps++;
+                    bars[j + 1].classList.add('swapping');
+                    bars[j + 1].style.height = (arr[j + 1] / 100) * 100 + '%';
+                    document.getElementById('insertionSwaps').textContent = swaps;
+                    document.getElementById('insertionTime').textContent = 
+                        Math.round((performance.now() - startTime) * 100) / 100 + 'ms';
+                    await sleep(50);
+                    bars[j + 1].classList.remove('swapping');
+                }
+            }
+
+            // Finalizar
+            document.getElementById('insertionStatus').textContent = '✓ Done';
+            document.getElementById('insertionStatus').className = 'stat-value done-true';
+            document.getElementById('insertionTime').textContent = 
+                Math.round((performance.now() - startTime) * 100) / 100 + 'ms';
+        }
+
+        // Bubble Sort
+        async function bubbleSort() {
+            const arr = [...originalArray];
+            let comps = 0, swaps = 0;
+            const startTime = performance.now();
+            const bars = document.querySelectorAll('#bubbleBars .bar');
+
+            for (let p = 0; p < arr.length - 1; p++) {
+                let trocado = false;
+
+                for (let i = 0; i < arr.length - 1 - p; i++) {
+                    comps++;
+                    // Comparação
+                    bars[i].classList.add('comparing');
+                    bars[i + 1].classList.add('comparing');
+                    document.getElementById('bubbleComps').textContent = comps;
+                    document.getElementById('bubbleTime').textContent = 
+                        Math.round((performance.now() - startTime) * 100) / 100 + 'ms';
+                    await sleep(50);
+
+                    if (arr[i] > arr[i + 1]) {
+                        // Swap
+                        [arr[i], arr[i + 1]] = [arr[i + 1], arr[i]];
+                        swaps++;
+                        trocado = true;
+
+                        bars[i].classList.remove('comparing');
+                        bars[i + 1].classList.remove('comparing');
+                        bars[i].classList.add('swapping');
+                        bars[i + 1].classList.add('swapping');
+
+                        bars[i].style.height = (arr[i] / 100) * 100 + '%';
+                        bars[i + 1].style.height = (arr[i + 1] / 100) * 100 + '%';
+
+                        document.getElementById('bubbleSwaps').textContent = swaps;
+                        document.getElementById('bubbleTime').textContent = 
+                            Math.round((performance.now() - startTime) * 100) / 100 + 'ms';
+                        await sleep(50);
+
+                        bars[i].classList.remove('swapping');
+                        bars[i + 1].classList.remove('swapping');
+                    } else {
+                        bars[i].classList.remove('comparing');
+                        bars[i + 1].classList.remove('comparing');
+                    }
+                }
+
+                if (!trocado) break;
+            }
+
+            // Finalizar
+            document.getElementById('bubbleStatus').textContent = '✓ Done';
+            document.getElementById('bubbleStatus').className = 'stat-value done-true';
+            document.getElementById('bubbleTime').textContent = 
+                Math.round((performance.now() - startTime) * 100) / 100 + 'ms';
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        async function handleStart() {
+            if (isRunning) return;
+            isRunning = true;
+
+            document.getElementById('startBtn').disabled = true;
+            document.getElementById('arraySize').disabled = true;
+
+            generateArray();
+
+            // Executar ambos em paralelo
+            await Promise.all([insertionSort(), bubbleSort()]);
+
+            isRunning = false;
+            document.getElementById('startBtn').disabled = false;
+            document.getElementById('arraySize').disabled = false;
+        }
+
+        // Update array size display
+        document.getElementById('arraySize').addEventListener('change', (e) => {
+            document.getElementById('sizeDisplay').textContent = e.target.value;
+            if (!isRunning) generateArray();
+        });
+
+        // Inicializar
+        generateArray();
+    </script>
+</body>
+</html>
